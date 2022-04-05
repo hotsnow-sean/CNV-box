@@ -1,4 +1,6 @@
 from functools import reduce
+import math
+import os
 from typing import Dict, Sequence
 import warnings
 import numpy as np
@@ -13,7 +15,7 @@ def mode_rd(RD: np.ndarray, bin_size: int):
     count = np.bincount(new_RD)
 
     if len(count) < 50:
-        return np.argmax(count) / bin_size
+        return np.mean(new_RD) / bin_size
 
     count = np.convolve(count, np.ones(50), "valid") / 50
     mode_min = np.argmax(count)
@@ -24,7 +26,8 @@ def gc_correct(RD: np.ndarray, Gc: np.ndarray):
     global_rd_ave = np.mean(RD)
     for i in range(len(RD)):
         mean = np.mean(RD[Gc == Gc[i]])
-        RD[i] *= global_rd_ave / mean
+        if not math.isclose(mean, 0.0):
+            RD[i] *= global_rd_ave / mean
     return RD
 
 
@@ -102,6 +105,8 @@ class RDG:
         from segutils import segment
 
         rd = self.bin_profile_[chr]
+
+        print(f"...segment start, chrID: {chr}, method: {method}")
         return segment(rd.rd, rd.pos, self.__bin_size, method), rd.mode
 
     def binning(self, bam_path: str, fa_path: dict = None, bin_size: int = 1000):
@@ -122,6 +127,8 @@ class RDG:
         samfile, refs = check_result
         bin_nums = {k: len(v) // bin_size for k, v in refs.items()}
         self.bin_profile_ = {k: RDG.RDdata(v) for k, v in bin_nums.items()}
+
+        print(f"...binning start: {os.path.basename(bam_path)}")
 
         # count read
         for read in samfile:
@@ -145,11 +152,12 @@ class RDG:
             rd.mode = mode_rd(rd.rd, bin_size)
             rd.rd[np.isclose(rd.rd, 0.0)] = rd.mode
             rd.rd = gc_correct(rd.rd, refs[chr].gc[refs[chr].valid])
-            print(len(rd.rd))
+
+            print(f"> chrID: {chr}, binning num: {len(rd.rd)}")
 
         self.__bin_size = bin_size
 
-    def __read_fa(self, fa_path: dict):
+    def read_fa(self, fa_path: dict):
         self.ref_profile_.clear()
         fa_path = {
             k: v
