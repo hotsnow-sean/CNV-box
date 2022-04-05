@@ -28,7 +28,9 @@ def read_gt(gt_path: str, is_simulation: bool):
         dtype={header[0]: int, header[1]: int, header[2]: str},
     )
     gt.columns = default_header
-    gt[default_header[2]].map(lambda x: default_gain if x == gain_tag else default_loss)
+    gt[default_header[2]] = gt[default_header[2]].map(
+        lambda x: default_gain if x == gain_tag else default_loss
+    )
 
     return gt
 
@@ -106,7 +108,7 @@ def draw_profile(
             ax.axvspan(
                 row.start,
                 row.end,
-                facecolor="g" if row.type == "gain" else "m",
+                color="g" if row.type == "gain" else "orange",
                 alpha=0.5,
             )
 
