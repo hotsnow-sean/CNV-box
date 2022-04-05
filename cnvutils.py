@@ -4,6 +4,10 @@ import numpy as np
 import pandas as pd
 
 
+__default_gain = "gain"
+__default_loss = "loss"
+
+
 def read_gt(gt_path: str, is_simulation: bool):
     """
     Read groundtruth file to a special DataFrame:
@@ -18,8 +22,6 @@ def read_gt(gt_path: str, is_simulation: bool):
         gain_tag = "duplication"
 
     default_header = ["start", "end", "type"]
-    default_gain = "gain"
-    default_loss = "loss"
 
     gt = pd.read_csv(
         gt_path,
@@ -29,7 +31,7 @@ def read_gt(gt_path: str, is_simulation: bool):
     )
     gt.columns = default_header
     gt[default_header[2]] = gt[default_header[2]].map(
-        lambda x: default_gain if x == gain_tag else default_loss
+        lambda x: __default_gain if x == gain_tag else __default_loss
     )
 
     return gt
@@ -108,7 +110,35 @@ def draw_profile(
             ax.axvspan(
                 row.start,
                 row.end,
-                color="g" if row.type == "gain" else "orange",
+                color="g" if row.type == __default_gain else "orange",
                 alpha=0.5,
             )
 
+
+def combiningCNV(
+    rd: np.ndarray, start: np.ndarray, end: np.ndarray, labels: np.ndarray, mode: float
+):
+    """Calculate CNV by labels and mode.
+    """
+    index = labels == 1
+    CNVRD = rd[index]
+    CNVstart = start[index]
+    CNVend = end[index]
+
+    type = np.frompyfunc(lambda x: 2 if x > mode else 1, 1, 1)(CNVRD)
+
+    for i in range(len(CNVRD) - 1):
+        if CNVend[i] + 1 == CNVstart[i + 1] and type[i] == type[i + 1]:
+            CNVstart[i + 1] = CNVstart[i]
+            type[i] = 0
+
+    index = type != 0
+    CNVRD = CNVRD[index]
+    CNVstart = CNVstart[index]
+    CNVend = CNVend[index]
+    CNVtype = type[index]
+    CNVtype = [__default_gain if i == 2 else __default_loss for i in CNVtype]
+    result = pd.DataFrame(
+        {"start": CNVstart, "end": CNVend, "type": CNVtype, "RD": CNVRD}
+    )
+    return result
