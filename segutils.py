@@ -1,4 +1,5 @@
 import numpy as np
+import pywt
 
 
 def no_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int):
@@ -28,7 +29,6 @@ def cbs_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int):
 
 
 def wave_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int):
-    import pywt
     import math
 
     def denoise(data, wavelet, noiseSigma):
@@ -62,11 +62,21 @@ def wave_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int):
     return seg_rd, seg_start, seg_end
 
 
+def wave_cbs_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int):
+    WC = pywt.wavedec(RD, 'haar', level=8, mode="constant")
+    WC[-2] = np.zeros_like(WC[-2])
+    WC[-1] = np.zeros_like(WC[-1])
+    nrd = pywt.waverec(WC, 'haar', mode='constant')
+    return cbs_seg(nrd[:len(pos)], pos, bin_size)
+
+
 def segment(RD: np.ndarray, pos: np.ndarray, bin_size: int, method: str = "cbs"):
     if method == "cbs":
         return cbs_seg(RD, pos, bin_size)
     elif method == "wave":
         return wave_seg(RD, pos, bin_size)
+    elif method == "wave_cbs":
+        return wave_cbs_seg(RD, pos, bin_size)
     else:
         return no_seg(RD, pos, bin_size)
 
