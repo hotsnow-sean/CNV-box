@@ -116,7 +116,7 @@ class RDG:
 
         # read references
         if fa_path is not None:
-            self.__read_fa(fa_path)
+            self.read_fa(fa_path)
 
         # check references avaliabled
         check_result = self.__check_bam_ref(bam_path)

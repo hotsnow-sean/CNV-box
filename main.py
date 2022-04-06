@@ -1,6 +1,8 @@
 import argparse
 import os
 
+import numpy as np
+
 # parse command line argument
 parser = argparse.ArgumentParser()
 parser.add_argument("bam_path")
@@ -20,20 +22,23 @@ chr = "chr21" if args.sim else "21"
 rdg = RDG(chr=[chr])
 rdg.binning(args.bam_path, {chr: args.fa_path})
 
-# read groundtruth
-gt = None if args.gt is None else read_gt(args.gt, args.sim)
+np.save("rddata", rdg.bin_profile_[chr].rd)
+np.save("posdata", rdg.bin_profile_[chr].pos)
 
-# draw
-fig = plt.figure(figsize=(15, 6))
+# # read groundtruth
+# gt = None if args.gt is None else read_gt(args.gt, args.sim)
 
-method = ["cbs", "wave"]
+# # draw
+# fig = plt.figure(figsize=(15, 6))
 
-for i, m in enumerate(method):
-    (rd, start, end), mode = rdg.segment(chr=chr, method=m)
+# method = ["cbs", "wave"]
 
-    ax = fig.add_subplot(2, 1, i + 1)
-    draw_profile(ax, rd, start, end, gt)
-    ax.set_title(f"{os.path.basename(args.bam_path)} with {m} segment")
+# for i, m in enumerate(method):
+#     (rd, start, end), mode = rdg.segment(chr=chr, method=m)
 
-plt.tight_layout()
-plt.show()
+#     ax = fig.add_subplot(2, 1, i + 1)
+#     draw_profile(ax, rd, start, end, gt)
+#     ax.set_title(f"{os.path.basename(args.bam_path)} with {m} segment")
+
+# plt.tight_layout()
+# plt.show()
