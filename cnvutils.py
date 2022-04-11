@@ -1,3 +1,4 @@
+import math
 from typing import Tuple
 from matplotlib.axes import Axes
 import numpy as np
@@ -72,7 +73,10 @@ def calc_result(
     gt.sort_values(by="start", inplace=True)
 
     match_cnt = i = j = 0
-    test_cnt = test.agg(lambda x: x["end"] - x["start"] + 1, axis=1).agg(sum)
+    if test.empty:
+        test_cnt = 0
+    else:
+        test_cnt = test.agg(lambda x: x["end"] - x["start"] + 1, axis=1).agg(sum)
     gt_cnt = gt.agg(lambda x: x["end"] - x["start"] + 1, axis=1).agg(sum)
 
     while i < len(test) and j < len(gt):
@@ -82,12 +86,15 @@ def calc_result(
             if lo <= hi:
                 match_cnt += hi - lo + 1
 
-        if test.iloc[i]["end"] < gt.iloc[j]["end"]:
+        if test.iloc[i]["end"] <= gt.iloc[j]["end"]:
             i += 1
         else:
             j += 1
 
-    precision = match_cnt / test_cnt
+    if test_cnt == 0:
+        precision = 0
+    else:
+        precision = match_cnt / test_cnt
     sensitivity = match_cnt / gt_cnt
 
     return precision, sensitivity
@@ -128,6 +135,9 @@ def combiningCNV(
     type = np.frompyfunc(lambda x: 2 if x > mode else 1, 1, 1)(CNVRD)
 
     for i in range(len(CNVRD) - 1):
+        if math.isclose(CNVRD[i], mode):
+            type[i] = 0
+            continue
         if CNVend[i] + 1 == CNVstart[i + 1] and type[i] == type[i + 1]:
             CNVstart[i + 1] = CNVstart[i]
             type[i] = 0
@@ -142,3 +152,43 @@ def combiningCNV(
         {"start": CNVstart, "end": CNVend, "type": CNVtype, "RD": CNVRD}
     )
     return result
+
+
+def space_fill(rd: np.ndarray, start: np.ndarray, end: np.ndarray, n: int = 30000):
+    need_pos = []
+    cnt = 0
+    for i in range(len(rd)):
+        tmp = end[i] - start[i]
+        if tmp > n:
+            a = tmp // n
+            need_pos.append((i, a + 1))
+            cnt += a
+
+    new_len = len(rd) + cnt
+    newrd = np.empty(new_len)
+    newstart = np.empty(new_len)
+    newend = np.empty(new_len)
+    should_start = 0
+    cur_pos = 0
+
+    for (i, a) in need_pos:
+        if i > should_start:
+            tmp = i - should_start
+            newrd[cur_pos : cur_pos + tmp] = rd[should_start:i]
+            newstart[cur_pos : cur_pos + tmp] = start[should_start:i]
+            newend[cur_pos : cur_pos + tmp] = end[should_start:i]
+            cur_pos += tmp
+        newrd[cur_pos : cur_pos + a] = rd[i]
+        seq = np.linspace(start[i], end[i] + 1, num=a + 1, endpoint=True, dtype=int)
+        newstart[cur_pos : cur_pos + a] = seq[:-1]
+        newend[cur_pos : cur_pos + a] = seq[1:] - 1
+
+        should_start = i + 1
+        cur_pos += a
+
+    if len(rd) > should_start:
+        newrd[cur_pos:] = rd[should_start:]
+        newstart[cur_pos:] = start[should_start:]
+        newend[cur_pos:] = end[should_start:]
+
+    return newrd, newstart, newend
