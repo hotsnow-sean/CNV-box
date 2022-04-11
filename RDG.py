@@ -23,8 +23,11 @@ def mode_rd(RD: np.ndarray, bin_size: int):
 
 
 def gc_correct(RD: np.ndarray, Gc: np.ndarray):
+    bin_count = np.bincount(Gc)
     global_rd_ave = np.mean(RD)
     for i in range(len(RD)):
+        if bin_count[Gc[i]] < 2:
+            continue
         mean = np.mean(RD[Gc == Gc[i]])
         if not math.isclose(mean, 0.0):
             RD[i] *= global_rd_ave / mean
@@ -72,7 +75,7 @@ class RDG:
                         range(start, end),
                         0,
                     )
-                    * 100
+                    * 1000
                     / bin_size
                 )
 
@@ -106,7 +109,7 @@ class RDG:
 
         rd = self.bin_profile_[chr]
 
-        print(f"...segment start, chrID: {chr}, method: {method}")
+        print(f"> segment start, chrID: {chr}, method: {method}")
         return segment(rd.rd, rd.pos, self.__bin_size, method), rd.mode
 
     def binning(self, bam_path: str, fa_path: dict = None, bin_size: int = 1000):
@@ -128,7 +131,7 @@ class RDG:
         bin_nums = {k: len(v) // bin_size for k, v in refs.items()}
         self.bin_profile_ = {k: RDG.RDdata(v) for k, v in bin_nums.items()}
 
-        print(f"...binning start: {os.path.basename(bam_path)}")
+        print(f"> binning start: {os.path.basename(bam_path)}")
 
         # count read
         for read in samfile:
@@ -153,7 +156,7 @@ class RDG:
             rd.rd[np.isclose(rd.rd, 0.0)] = rd.mode
             rd.rd = gc_correct(rd.rd, refs[chr].gc[refs[chr].valid])
 
-            print(f"> chrID: {chr}, binning num: {len(rd.rd)}")
+            print(f"\tchrID: {chr}, binning num: {len(rd.rd)}, bin_size: {bin_size}")
 
         self.__bin_size = bin_size
 

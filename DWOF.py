@@ -40,6 +40,7 @@ class DWOF:
         self.decision_scores_ = np.zeros(SIZE)
 
         # step 4: update scores
+        cnt = 0
         while True:
             radius *= 1.1
             clus_id = np.arange(SIZE)
@@ -61,14 +62,23 @@ class DWOF:
                 self.decision_scores_ + (last_clus_size - 1) / cur_clus_size
             )
             last_clus_size = cur_clus_size
+            cnt += 1
 
-            if np.amax(clus_cnt) >= SIZE - self.threshold_:
+            if cnt > 2 and (
+                np.amax(clus_cnt) >= SIZE - self.threshold_
+                or (SIZE > 100 and np.count_nonzero(clus_cnt) < 5)
+            ):
                 break
 
     def __find(arr: np.ndarray, id: int) -> int:
-        if id != arr[id]:
-            arr[id] = DWOF.__find(arr, arr[id])
-        return arr[id]
+        p = id
+        while p != arr[p]:
+            p = arr[p]
+        while id != arr[id]:
+            tmp = id
+            id = arr[id]
+            arr[tmp] = p
+        return p
 
     def __union(arr: np.ndarray, a: int, b: int):
         ac = DWOF.__find(arr, a)
