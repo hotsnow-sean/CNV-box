@@ -58,7 +58,7 @@ for k, v in files.items():
     rdg.binning(v[0])
     gt = read_gt(v[1], False)
 
-    (rd, start, end), mode = rdg.segment(chr="21", method="no")
+    (rd, start, end), mode = rdg.segment(chrom="21", method="no")
     for num in candidate_support:
         clf = mcd.MCD(support_fraction=num)
         clf.fit(rd.reshape(-1, 1))
