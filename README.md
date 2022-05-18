@@ -17,7 +17,7 @@ rdg = RDG(chr=['chr21'])
 # 1. direct preprocess
 # chr is a chromosome name string, must in initial chr list
 # Return RD profile after segment
-(rd, start, end), mode = rdg.preprocess(bam, fa, chr='chr21')
+(rd, start, end), mode = rdg.preprocess(bam, fa, chrom='chr21')
 
 # Too lazy to write ...
 ```

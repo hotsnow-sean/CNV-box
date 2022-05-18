@@ -1,8 +1,9 @@
-from functools import reduce
 import math
 import os
-from typing import Dict, Sequence
 import warnings
+from functools import reduce
+from typing import Dict
+
 import numpy as np
 import pysam
 from Bio import SeqIO
@@ -79,8 +80,10 @@ class RDG:
                     / bin_size
                 )
 
-    def __init__(self, chr: Sequence[str] = ["21"]) -> None:
-        self.__chrs = [v for v in set(chr) if isinstance(v, str)]
+    def __init__(self, chrom=None) -> None:
+        if chrom is None:
+            chrom = ["21"]
+        self.__chrs = [v for v in set(chrom) if isinstance(v, str)]
         self.__bin_size: int = 0
         self.bin_profile_: Dict[str, RDG.RDdata] = {}
         self.ref_profile_: Dict[str, RDG.RefData] = {}
@@ -90,25 +93,25 @@ class RDG:
         bam_path: str,
         fa_path: str,
         bin_size: int = 1000,
-        chr: str = "21",
+        chrom: str = "21",
         seg: str = "cbs",
     ):
-        self.binning(bam_path, {chr: fa_path}, bin_size)
-        return self.segment(chr, seg)
+        self.binning(bam_path, {chrom: fa_path}, bin_size)
+        return self.segment(chrom, seg)
 
-    def segment(self, chr: str, method: str = "cbs"):
+    def segment(self, chrom: str, method: str = "cbs"):
         if self.__bin_size <= 0:
             warnings.warn("Please call binning method before segment.")
             return (None, None, None), 0.0
-        if chr not in self.bin_profile_:
+        if chrom not in self.bin_profile_:
             warnings.warn("Please check chr id.")
             return (None, None, None), 0.0
 
         from segutils import segment
 
-        rd = self.bin_profile_[chr]
+        rd = self.bin_profile_[chrom]
 
-        print(f"> segment start, chrID: {chr}, method: {method}")
+        print(f"> segment start, chrID: {chrom}, method: {method}")
         return segment(rd.rd, rd.pos, self.__bin_size, method), rd.mode
 
     def binning(self, bam_path: str, fa_path: dict = None, bin_size: int = 1000):
@@ -120,7 +123,7 @@ class RDG:
         if fa_path is not None:
             self.read_fa(fa_path)
 
-        # check references avaliabled
+        # check references available
         check_result = self.__check_bam_ref(bam_path)
         if check_result is None:
             return
@@ -135,9 +138,9 @@ class RDG:
         # count read
         for read in samfile:
             idx = read.reference_start // bin_size
-            chr = read.reference_name
-            if chr in refs and idx < bin_nums[chr]:
-                self.bin_profile_[chr].rd[idx] += 1
+            chrom = read.reference_name
+            if chrom in refs and idx < bin_nums[chrom]:
+                self.bin_profile_[chrom].rd[idx] += 1
         samfile.close()
 
         # count N and gc
@@ -145,15 +148,15 @@ class RDG:
             v.stat(bin_size)
 
         # correct RD (del N, fill zero, correct gc bias)
-        for chr, rd in self.bin_profile_.items():
-            rd.rd = rd.rd[refs[chr].valid]
-            rd.pos = rd.pos[refs[chr].valid]
+        for chrom, rd in self.bin_profile_.items():
+            rd.rd = rd.rd[refs[chrom].valid]
+            rd.pos = rd.pos[refs[chrom].valid]
             rd.rd /= bin_size
             rd.mode = mode_rd(rd.rd, bin_size)
             rd.rd[np.isclose(rd.rd, 0.0)] = rd.mode
-            rd.rd = gc_correct(rd.rd, refs[chr].gc[refs[chr].valid])
+            rd.rd = gc_correct(rd.rd, refs[chrom].gc[refs[chrom].valid])
 
-            print(f"\tchrID: {chr}, binning num: {len(rd.rd)}, bin_size: {bin_size}")
+            print(f"\tchrID: {chrom}, binning num: {len(rd.rd)}, bin_size: {bin_size}")
 
         self.__bin_size = bin_size
 
@@ -172,9 +175,9 @@ class RDG:
     def __check_bam_ref(self, bam_path: str):
         samfile = pysam.AlignmentFile(bam_path, "rb", ignore_truncation=True)
         refs = {
-            chr: self.ref_profile_[chr]
-            for chr in samfile.references
-            if chr in self.ref_profile_
+            chrom: self.ref_profile_[chrom]
+            for chrom in samfile.references
+            if chrom in self.ref_profile_
         }
         if not refs:
             samfile.close()

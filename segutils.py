@@ -34,9 +34,9 @@ def no_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int):
     for i in need_pos:
         if i > should:
             tmp = i - should
-            new_rd[cur : cur + tmp] = seg_rd[should:i]
-            new_start[cur : cur + tmp] = seg_start[should:i]
-            new_end[cur : cur + tmp] = seg_end[should:i]
+            new_rd[cur: cur + tmp] = seg_rd[should:i]
+            new_start[cur: cur + tmp] = seg_start[should:i]
+            new_end[cur: cur + tmp] = seg_end[should:i]
             cur += tmp
             should = i
         new_rd[cur] = (seg_rd[should - 1] + seg_rd[should]) / 2
@@ -60,9 +60,9 @@ def cbs_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int):
     seg_start = np.empty(len(seg_index), dtype=int)
     seg_end = np.empty(len(seg_index), dtype=int)
 
-    for i, id in enumerate(seg_index):
-        start = id.start
-        end = id.end
+    for i, index in enumerate(seg_index):
+        start = index.start
+        end = index.end
         seg = RD[start:end]
         seg_rd[i] = np.mean(seg)
         seg_start[i] = pos[start] * bin_size + 1
@@ -87,9 +87,9 @@ def cbs_50_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int):
     last_num = 0
     i = 0
     for sub_index in seg_index:
-        for id in sub_index:
-            start = id.start + last_num
-            end = id.end + last_num
+        for index in sub_index:
+            start = index.start + last_num
+            end = index.end + last_num
             seg = RD[start:end]
             seg_rd[i] = np.mean(seg)
             seg_start[i] = pos[start] * bin_size + 1
@@ -150,9 +150,9 @@ def cbs_r_seg(RD: np.ndarray, pos: np.ndarray, bin_size: int, ncol=50):
     seg_start = np.empty(len(s_start), dtype=int)
     seg_end = np.empty(len(s_start), dtype=int)
 
-    for i, id in enumerate(zip(s_start, s_end)):
-        start = id[0]
-        end = id[1]
+    for i, index in enumerate(zip(s_start, s_end)):
+        start = index[0]
+        end = index[1]
         seg = RD[start:end]
         seg_rd[i] = np.mean(seg)
         seg_start[i] = pos[start] * bin_size + 1
@@ -194,4 +194,3 @@ def segment(RD: np.ndarray, pos: np.ndarray, bin_size: int, method: str = "cbs")
         return wave_cbs_r_seg(RD, pos, bin_size)
     else:
         return no_seg(RD, pos, bin_size)
-

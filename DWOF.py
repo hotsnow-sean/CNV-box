@@ -3,6 +3,23 @@ import numpy as np
 from sklearn.metrics import euclidean_distances
 
 
+def _find(arr: np.ndarray, index: int) -> int:
+    p = index
+    while p != arr[p]:
+        p = arr[p]
+    while index != arr[index]:
+        tmp = index
+        index = arr[index]
+        arr[tmp] = p
+    return p
+
+
+def _union(arr: np.ndarray, a: int, b: int):
+    ac = _find(arr, a)
+    bc = _find(arr, b)
+    arr[ac] = bc
+
+
 class DWOF:
     def __init__(self, n_neighbors: int = 20, contamination: float = 0.1) -> None:
         self.n_neighbors_: int = n_neighbors if n_neighbors >= 3 else 3
@@ -50,37 +67,22 @@ class DWOF:
                 for j in range(SIZE):
                     if distance[i, sort_index[i, j]] >= r:
                         break
-                    DWOF.__union(clus_id, i, sort_index[i, j])
+                    _union(clus_id, i, sort_index[i, j])
 
             for i in range(SIZE):
-                DWOF.__find(clus_id, i)
+                _find(clus_id, i)
 
             clus_cnt = np.bincount(clus_id)
             cur_clus_size = np.frompyfunc(lambda x: clus_cnt[x], 1, 1)(clus_id)
 
             self.decision_scores_ = (
-                self.decision_scores_ + (last_clus_size - 1) / cur_clus_size
+                    self.decision_scores_ + (last_clus_size - 1) / cur_clus_size
             )
             last_clus_size = cur_clus_size
             cnt += 1
 
             if cnt > 2 and (
-                np.amax(clus_cnt) >= SIZE - self.threshold_
-                or (SIZE > 100 and np.count_nonzero(clus_cnt) < 5)
+                    np.amax(clus_cnt) >= SIZE - self.threshold_
+                    or (SIZE > 100 and np.count_nonzero(clus_cnt) < 5)
             ):
                 break
-
-    def __find(arr: np.ndarray, id: int) -> int:
-        p = id
-        while p != arr[p]:
-            p = arr[p]
-        while id != arr[id]:
-            tmp = id
-            id = arr[id]
-            arr[tmp] = p
-        return p
-
-    def __union(arr: np.ndarray, a: int, b: int):
-        ac = DWOF.__find(arr, a)
-        bc = DWOF.__find(arr, b)
-        arr[ac] = bc
