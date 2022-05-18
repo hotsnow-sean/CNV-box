@@ -22,6 +22,10 @@ rdg = RDG(chr=['chr21'])
 # Too lazy to write ...
 ```
 
+### DWOF
+
+> A simple implement of DWOF algorithm.
+
 ### cnvutils
 
 > Some util function.
@@ -29,6 +33,7 @@ rdg = RDG(chr=['chr21'])
 + `read_gt`: Read groundtruth to special format.
 + `calc_result`: Calculate precesion and sensitivity.
 + `draw_profile`: Plot segment RD profile and groundtruth area.
++ `combiningCNV`: Get CNV RD & pos by labels.
 
 ### segutils
 
@@ -36,3 +41,5 @@ rdg = RDG(chr=['chr21'])
 
 + `cbs_seg`: CBS algorithm.
 + `no_seg`: bin as seg.
++ `wave_seg`: wavelets segment.
++ `wave_cbs_seg`: wave & cbs segment.
