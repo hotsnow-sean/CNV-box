@@ -93,8 +93,7 @@ class RDG:
         chr: str = "21",
         seg: str = "cbs",
     ):
-        if self.__bin_size <= 0:
-            self.binning(bam_path, {chr: fa_path}, bin_size)
+        self.binning(bam_path, {chr: fa_path}, bin_size)
         return self.segment(chr, seg)
 
     def segment(self, chr: str, method: str = "cbs"):
@@ -135,8 +134,6 @@ class RDG:
 
         # count read
         for read in samfile:
-            if read.is_unmapped:
-                continue
             idx = read.reference_start // bin_size
             chr = read.reference_name
             if chr in refs and idx < bin_nums[chr]:

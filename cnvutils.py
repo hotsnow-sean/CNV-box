@@ -1,5 +1,5 @@
 import math
-from typing import Tuple
+from typing import List, Tuple
 from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
@@ -120,6 +120,27 @@ def draw_profile(
                 color="g" if row.type == __default_gain else "orange",
                 alpha=0.5,
             )
+
+
+__X, __Y = np.meshgrid(np.arange(0.05, 1.1, 0.02), np.arange(0.05, 1.1, 0.02))
+__Z = 2 * __X * __Y / (__X + __Y)
+__markers = ["o", "d", "x", "p", "s", "*"]
+__colors = ["b", "g", "c", "m", "y", "r"]
+__label_pos = np.repeat(np.arange(0.1, 1.0, 0.1), repeats=2).reshape(-1, 2)
+
+
+def draw_F1(ax: Axes, data: List[Tuple[str, float, float]]):
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
+    C = ax.contour(
+        __X, __Y, __Z, np.arange(0.1, 1.0, 0.1), colors="dimgray", linestyles="--"
+    )
+    ax.clabel(C, manual=__label_pos)
+    for i, (m, x, y) in enumerate(data, -len(data)):
+        ax.scatter(x, y, c=__colors[i], marker=__markers[i], label=m)
+    ax.legend()
+    ax.set_xlabel("Sensitivity", fontweight="semibold")
+    ax.set_ylabel("Precision", fontweight="semibold")
 
 
 def combiningCNV(
